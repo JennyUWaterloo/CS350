@@ -289,6 +289,19 @@ cmd_quit(int nargs, char **args)
 	return 0;
 }
 
+static
+int
+cmd_dth(int nargs, char **args)
+{
+	(void)nargs;
+	(void)args;
+
+	if (dbflags == 0) {
+		dbflags = 0x0010;
+	}
+	return 0;
+}
+
 /*
  * Command for mounting a filesystem.
  */
@@ -505,6 +518,7 @@ static const char *mainmenu[] = {
 #endif /* UW */
 #endif
 	"[kh] Kernel heap stats              ",
+	"[dth] Enable DB_THREADS debugging   ",
 	"[q] Quit and shut down              ",
 	NULL
 };
@@ -546,6 +560,7 @@ static struct {
 	{ "pwd",	cmd_pwd },
 	{ "sync",	cmd_sync },
 	{ "panic",	cmd_panic },
+	{ "dth",        cmd_dth},
 	{ "q",		cmd_quit },
 	{ "exit",	cmd_quit },
 	{ "halt",	cmd_quit },
