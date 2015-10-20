@@ -69,7 +69,9 @@ static struct semaphore *proc_count_mutex;
 struct semaphore *no_proc_sem;   
 #endif  // UW
 
+#ifdef OPT_A2
 
+#endif // OPT_A2
 
 /*
  * Create a proc structure.
@@ -226,6 +228,9 @@ proc_create_runprogram(const char *name)
 	if (proc == NULL) {
 		return NULL;
 	}
+
+#if OPT_A2
+#endif //OPT_A2
 
 #ifdef UW
 	/* open the console - this should always succeed */
