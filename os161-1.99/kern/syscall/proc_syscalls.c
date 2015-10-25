@@ -9,6 +9,7 @@
 #include <thread.h>
 #include <addrspace.h>
 #include <copyinout.h>
+#include <mips/trapframe.h>
 
   /* this implementation of sys__exit does not do anything with the exit code */
   /* this needs to be fixed to get exit() and waitpid() working properly */
@@ -17,9 +18,12 @@ void sys__exit(int exitcode) {
 
   struct addrspace *as;
   struct proc *p = curproc;
-  /* for now, just include this to keep the compiler from complaining about
-     an unused variable */
-  (void)exitcode;
+  
+  #if OPT_A2
+
+
+
+  #endif //OPT_A2
 
   DEBUG(DB_SYSCALL,"Syscall: _exit(%d)\n",exitcode);
 
@@ -49,23 +53,18 @@ void sys__exit(int exitcode) {
 }
 
 
-/* stub handler for getpid() system call                */
 int
 sys_getpid(pid_t *retval)
 {
-  /* for now, this is just a stub that always returns a PID of 1 */
-  /* you need to fix this to make it work properly */
-  *retval = 1;
+  *retval = curproc->pid;
   return(0);
 }
 
-/* stub handler for waitpid() system call                */
-
 int
 sys_waitpid(pid_t pid,
-	    userptr_t status,
-	    int options,
-	    pid_t *retval)
+      userptr_t status,
+      int options,
+      pid_t *retval)
 {
   int exitstatus;
   int result;
@@ -82,7 +81,12 @@ sys_waitpid(pid_t pid,
   if (options != 0) {
     return(EINVAL);
   }
-  /* for now, just pretend the exitstatus is 0 */
+
+  #if OPT_A2
+
+
+  #endif OPT_A2
+
   exitstatus = 0;
   result = copyout((void *)&exitstatus,status,sizeof(int));
   if (result) {
@@ -92,3 +96,40 @@ sys_waitpid(pid_t pid,
   return(0);
 }
 
+int sys_fork(struct trapframe *tf, pid_t *retval) {
+  int error;
+  struct proc *fork_proc = proc_create_runprogram("fork_proc");
+
+  if (fork_proc == NULL) {
+    return(ENOMEM);
+  }
+  else if (fork_proc == (struct proc *) ENPROC) {
+    return (ENPROC);
+  }
+
+  struct addrSpace *fork_addrSpace = kmalloc(sizeof(struct addrspace));
+
+  error = as_copy(curproc->p_addrspace, &fork_addrSpace);
+  if (error) {
+    proc_destroy(fork_proc);
+    return error;
+  }
+
+  fork_proc->p_addrspace = fork_addrSpace;
+
+  temp_TF = kmalloc(sizeof(struct trapframe));
+  if (temp_TF == NULL) {
+    return ENOMEM;
+  }
+
+  memcpy(temp_TF, tf, sizeof(struct trapframe));
+
+  error = thread_fork("fork_thread", fork_proc, enter_forked_process, NULL, 0);
+  if (error) {
+    proc_destroy(fork_proc);
+    return -1;
+  }
+
+  *retval = fork_proc->pid;
+  return 0;
+}

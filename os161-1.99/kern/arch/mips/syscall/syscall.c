@@ -35,6 +35,7 @@
 #include <thread.h>
 #include <current.h>
 #include <syscall.h>
+#include "opt-A2.h"
 
 
 /*
@@ -179,5 +180,15 @@ syscall(struct trapframe *tf)
 void
 enter_forked_process(struct trapframe *tf)
 {
-	(void)tf;
+	#if OPT_A2
+		struct trapframe *forkTf = *tf;
+		forkTf.tf_v0 = 0;
+		forkTf.tf_a3 = 0; //signal no error
+		forkTf.tf_epc += 4; //advance the PC, to avoid the syscall again
+
+		as_activate();
+		mips_usermode(&forkTf);
+	#else
+		(void)tf;
+	#endif //OPT_A2
 }
