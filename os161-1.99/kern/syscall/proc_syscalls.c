@@ -96,7 +96,7 @@ sys_waitpid(pid_t pid,
   return(0);
 }
 
-int sys_fork(struct trapframe *tf, pid_t *retval) {
+/*int sys_fork(struct trapframe *tf, pid_t *retval) {
   int error;
   struct proc *fork_proc = proc_create_runprogram("fork_proc");
 
@@ -132,4 +132,4 @@ int sys_fork(struct trapframe *tf, pid_t *retval) {
 
   *retval = fork_proc->pid;
   return 0;
-}
+}*/
