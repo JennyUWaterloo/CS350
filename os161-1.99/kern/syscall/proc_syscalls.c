@@ -56,7 +56,7 @@ void sys__exit(int exitcode) {
 int
 sys_getpid(pid_t *retval)
 {
-  *retval = curproc->pid;
+  *retval = curproc->p_pid;
   return(0);
 }
 
@@ -85,7 +85,7 @@ sys_waitpid(pid_t pid,
   #if OPT_A2
 
 
-  #endif OPT_A2
+  #endif //OPT_A2
 
   exitstatus = 0;
   result = copyout((void *)&exitstatus,status,sizeof(int));
