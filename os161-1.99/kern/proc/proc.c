@@ -285,23 +285,23 @@ proc_create_runprogram(const char *name)
 	
 	if (pid_left < 0) return NULL; //no more pid left
 
-	procStr->p_pid = pid_left;
+	proc->p_pid = pid_left;
 
 	procStr = kmalloc(sizeof(struct procStruct));
 	procStr->proc_sem = sem_create("proc_sem", 0);
+	procStr->p_pid = proc->p_pid;
 
 	struct array *children_pids = array_create();
 	array_setsize(children_pids, 0);
 
 	procStr->children_pids = children_pids;
 	procStr->exitcode = -1;
-	procStr->p_pid = kproc->p_pid;
 
 	if (pid_left == 0) {
 		procStr->parent_pid = -1; //no parent - the topmost proc
 	}
 	else {
-		procStr->parent_pid = kproc->p_pid;
+		procStr->parent_pid = curproc->p_pid;
 	}
 
 	err = array_add(procStructArray, procStr, NULL);
