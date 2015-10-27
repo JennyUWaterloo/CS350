@@ -28,14 +28,15 @@ void sys__exit(int exitcode) {
 
     int location = locatePid(p->p_pid);
     struct procStruct *procStr = array_get(procStructArray, location);
+    struct procStruct *childProcStr;
     procStr->exitcode = _MKWAIT_EXIT(exitcode);
+    //checkChildren(location);
+    int *childPid;
     int arraySize = array_num(procStr->children_pids);
     int childLocation;
-    struct procStruct *childProcStr;
-    int childPid;
 
     for (int i = 0; i < arraySize; i++) {
-      childPid = (int)array_get(procStr->children_pids, i);
+      childPid = array_get(procStr->children_pids, i);
       childLocation = locatePid(childPid);
       childProcStr = array_get(procStructArray, childLocation);
 
