@@ -22,7 +22,7 @@ void sys__exit(int exitcode) {
   
   #if OPT_A2
 
-  struct lock *proc_lock = grabLock();
+  struct lock *proc_lock = lock_create("proc_lock");
   KASSERT(proc_lock != NULL);
   lock_acquire(proc_lock);
 

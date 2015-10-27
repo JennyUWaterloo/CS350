@@ -487,8 +487,8 @@ int checkAndUpdatePid(int pid)
 
 int locatePid(int pid)
 {
-	struct procStruct *tempProc;
 	int location = -1;
+	struct procStruct *tempProc;
 	int arraySize = array_num(procStructArray); //had to do this to get rid of "comparison between signed and unsigned warning"
 	for (int i = 0; i < arraySize; i++) {
 		tempProc = array_get(procStructArray, i);
