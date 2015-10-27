@@ -22,7 +22,7 @@ void sys__exit(int exitcode) {
   
   #if OPT_A2
 
-  struct lock *proc_lock = lock_create("proc_lock");
+  struct lock *procLock = lock_create("procLock");
   KASSERT(proc_lock != NULL);
   lock_acquire(proc_lock);
 
@@ -30,7 +30,6 @@ void sys__exit(int exitcode) {
     struct procStruct *procStr = array_get(procStructArray, location);
     struct procStruct *childProcStr;
     procStr->exitcode = _MKWAIT_EXIT(exitcode);
-    //checkChildren(location);
     int *childPid;
     int arraySize = array_num(procStr->children_pids);
     int childLocation;
