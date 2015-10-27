@@ -51,6 +51,8 @@
 #include <synch.h>
 #include <kern/fcntl.h>  
 #include "opt-A2.h"
+#include <limits.h>
+#include <kern/errno.h>
 
 /*
  * The process for the kernel; this holds all the kernel-only threads.
@@ -71,6 +73,10 @@ struct semaphore *no_proc_sem;
 #endif  // UW
 
 #ifdef OPT_A2
+
+struct array *procStructArray;
+struct lock *proc_lock;
+int pid_left;
 
 #endif // OPT_A2
 
@@ -211,6 +217,44 @@ proc_bootstrap(void)
     panic("could not create no_proc_sem semaphore\n");
   }
 #endif // UW 
+
+#if OPT_A2
+
+  	int err;
+	proc_lock = lock_create("proc_lock");
+	procStructArray = array_create();
+	KASSERT(procStructArray != NULL);
+	array_setsize(procStructArray, 0);
+	struct procStruct *procStr;
+	
+	if (pid_left < 0) return; //no more pid left
+
+	procStr->p_pid = pid_left;
+
+	procStr = kmalloc(sizeof(struct procStruct));
+	procStr->proc_sem = sem_create("proc_sem", 0);
+
+	struct array *children_pids = array_create();
+	array_setsize(children_pids, 0);
+
+	procStr->children_pids = children_pids;
+	procStr->exitcode = -1;
+	procStr->p_pid = kproc->p_pid;
+
+	if (pid_left == 0) {
+		procStr->parent_pid = -1; //no parent - the topmost proc
+	}
+	else {
+		procStr->parent_pid = kproc->p_pid;
+	}
+
+	err = array_add(procStructArray, procStr, NULL);
+	if (err) {
+		panic("something went wrong with array_add(procStructArray, procStr)\n");
+	}
+
+
+#endif //OPT_A2
 }
 
 /*
@@ -231,6 +275,53 @@ proc_create_runprogram(const char *name)
 	}
 
 #if OPT_A2
+	int err;
+
+	lock_acquire(proc_lock);
+
+	checkAndUpdatePid(1);
+
+	struct procStruct *procStr;
+	
+	if (pid_left < 0) return NULL; //no more pid left
+
+	procStr->p_pid = pid_left;
+
+	procStr = kmalloc(sizeof(struct procStruct));
+	procStr->proc_sem = sem_create("proc_sem", 0);
+
+	struct array *children_pids = array_create();
+	array_setsize(children_pids, 0);
+
+	procStr->children_pids = children_pids;
+	procStr->exitcode = -1;
+	procStr->p_pid = kproc->p_pid;
+
+	if (pid_left == 0) {
+		procStr->parent_pid = -1; //no parent - the topmost proc
+	}
+	else {
+		procStr->parent_pid = kproc->p_pid;
+	}
+
+	err = array_add(procStructArray, procStr, NULL);
+	if (err) {
+		panic("something went wrong with array_add(procStructArray, procStr)\n");
+	}
+
+	struct procStruct *childProc;
+	
+	int location = locatePid(curproc->p_pid);
+
+	childProc = array_get(procStructArray, location);
+
+	int *childPid = kmalloc(sizeof(pid_t));
+	*childPid = procStr->p_pid;
+
+	err = array_add(childProc->children_pids, childPid, NULL);
+
+	lock_release(proc_lock);
+
 #endif //OPT_A2
 
 #ifdef UW
@@ -370,3 +461,43 @@ curproc_setas(struct addrspace *newas)
 	spinlock_release(&proc->p_lock);
 	return oldas;
 }
+
+#if OPT_A2
+
+int checkAndUpdatePid(int pid)
+{
+	struct procStruct *tempProc;
+	int updatedPid = pid;
+	int arrayNum = array_num(procStructArray); //had to do this to get rid of "comparison between signed and unsigned warning"
+	for (int i = 0; i < arrayNum; i++) {
+		tempProc = array_get(procStructArray, i);
+		if (tempProc->p_pid == pid) {
+			updatedPid++;
+			return checkAndUpdatePid(updatedPid);
+		}
+	}
+	pid_left = updatedPid;
+
+	if(pid_left > PID_MAX) {
+		return ENPROC;
+	}
+
+	return updatedPid;
+}
+
+int locatePid(int pid)
+{
+	struct procStruct *tempProc;
+	int location = -1;
+	int arraySize = array_num(procStructArray); //had to do this to get rid of "comparison between signed and unsigned warning"
+	for (int i = 0; i < arraySize; i++) {
+		tempProc = array_get(procStructArray, i);
+		if (tempProc->p_pid == pid) {
+			location = i;
+			return location;
+		}
+	}
+	return location;
+}
+
+#endif //OPT_A2

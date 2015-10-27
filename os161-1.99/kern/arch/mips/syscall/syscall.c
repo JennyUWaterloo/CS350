@@ -36,6 +36,7 @@
 #include <current.h>
 #include <syscall.h>
 #include "opt-A2.h"
+#include <addrspace.h>
 
 
 /*
@@ -132,7 +133,12 @@ syscall(struct trapframe *tf)
 	  break;
 #endif // UW
 
-	    /* Add stuff here */
+#if OPT_A2
+
+	 case SYS_fork:
+	 	err = sys_fork(tf, (pid_t *)&retval);
+	 	break;
+#endif //OPT_A2
  
 	default:
 	  kprintf("Unknown syscall %d\n", callno);
@@ -181,7 +187,7 @@ void
 enter_forked_process(struct trapframe *tf)
 {
 	#if OPT_A2
-		struct trapframe *forkTf = *tf;
+		struct trapframe forkTf = *tf;
 		forkTf.tf_v0 = 0;
 		forkTf.tf_a3 = 0; //signal no error
 		forkTf.tf_epc += 4; //advance the PC, to avoid the syscall again

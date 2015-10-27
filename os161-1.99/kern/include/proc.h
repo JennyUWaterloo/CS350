@@ -69,12 +69,26 @@ struct proc {
   struct vnode *console;                /* a vnode for the console device */
 #endif
 
-     #if OPT_A2
+#if OPT_A2
      	pid_t p_pid;
-      struct array *children_pids;
-     #endif //OPT_A2
+#endif //OPT_A2
 	/* add more material here as needed */
 };
+
+#if OPT_A2
+
+struct procStruct {
+  struct semaphore *proc_sem;
+  struct array *children_pids;
+  pid_t p_pid;
+  pid_t parent_pid;
+  int exitcode;
+};
+
+int checkAndUpdatePid(int pid);
+int locatePid(int pid);
+
+#endif //OPT_A2
 
 /* This is the process structure for the kernel and for kernel-only threads. */
 extern struct proc *kproc;
