@@ -22,9 +22,9 @@ void sys__exit(int exitcode) {
   
   #if OPT_A2
 
-  struct lock *procLock = lock_create("procLock");
-  KASSERT(procLock != NULL);
-  lock_acquire(procLock);
+  struct lock *proc_lock = grabLock();
+  KASSERT(proc_lock != NULL);
+  lock_acquire(proc_lock);
 
     int location = locatePid(p->p_pid);
     struct procStruct *procStr = array_get(procStructArray, location);
@@ -55,7 +55,7 @@ void sys__exit(int exitcode) {
 
     V(procStr->proc_sem);
 
-  lock_release(procLock);
+  lock_release(proc_lock);
 
   #endif //OPT_A2
 
