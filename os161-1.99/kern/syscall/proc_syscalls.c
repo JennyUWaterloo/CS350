@@ -37,7 +37,7 @@ void sys__exit(int exitcode) {
 
     for (int i = 0; i < arraySize; i++) {
       childPid = array_get(procStr->children_pids, i);
-      childLocation = locatePid(childPid);
+      childLocation = locatePid(*childPid);
       childProcStr = array_get(procStructArray, childLocation);
 
       if(childProcStr->exitcode >= 0) {
