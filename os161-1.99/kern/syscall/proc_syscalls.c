@@ -124,7 +124,7 @@ sys_waitpid(pid_t pid,
   } else if (procStr == NULL) {
     return (ESRCH);
   }
-  exitcode = getExitCode(pid);
+  exitstatus = getExitCode(pid);
 
   #endif //OPT_A2
 
