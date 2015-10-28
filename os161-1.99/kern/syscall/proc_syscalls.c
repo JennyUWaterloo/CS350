@@ -22,9 +22,9 @@ void sys__exit(int exitcode) {
   
   #if OPT_A2
 
-  struct lock *proc_lock = lock_create("proc_lock");
-  KASSERT(proc_lock != NULL);
-  lock_acquire(proc_lock);
+  // struct lock *proc_lock = lock_create("proc_lock");
+  // KASSERT(proc_lock != NULL);
+  // lock_acquire(proc_lock);
 
     int location = locatePid(p->p_pid);
     struct procStruct *procStr = array_get(procStructArray, location);
@@ -44,9 +44,9 @@ void sys__exit(int exitcode) {
         for (int j = 0; j < arraySize; j++) {
           array_remove(childProcStr->children_pids, j);
         }
-        sem_destroy(childProcStr->proc_sem);
         array_destroy(childProcStr->children_pids);
-        array_remove(procStr->children_pids, i);
+        sem_destroy(childProcStr->proc_sem);
+        // array_remove(procStr->children_pids, i);
         array_remove(procStructArray, childLocation);
         arraySize--;
         i--;
@@ -55,7 +55,7 @@ void sys__exit(int exitcode) {
 
     V(procStr->proc_sem);
 
-  lock_release(proc_lock);
+  // lock_release(proc_lock);
 
   #endif //OPT_A2
 
