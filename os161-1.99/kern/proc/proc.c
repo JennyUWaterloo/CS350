@@ -229,7 +229,7 @@ proc_bootstrap(void)
 	
 	if (pid_left < 0) return; //no more pid left
 
-	procStr->p_pid = pid_left;
+	kproc->p_pid = pid_left;
 
 	procStr = kmalloc(sizeof(struct procStruct));
 	procStr->proc_sem = sem_create("proc_sem", 0);
@@ -245,7 +245,7 @@ proc_bootstrap(void)
 		procStr->parent_pid = -1; //no parent - the topmost proc
 	}
 	else {
-		procStr->parent_pid = kproc->p_pid;
+		procStr->parent_pid = curproc->p_pid;
 	}
 
 	err = array_add(procStructArray, procStr, NULL);
@@ -319,6 +319,9 @@ proc_create_runprogram(const char *name)
 	*childPid = procStr->p_pid;
 
 	err = array_add(childProc->children_pids, childPid, NULL);
+	if (err) {
+		panic("something went wrong with array_add(childProc->children_pids, childPid, NULL)\n");
+	}
 
 	lock_release(proc_lock);
 
