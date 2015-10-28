@@ -46,8 +46,8 @@ void sys__exit(int exitcode) {
         }
         sem_destroy(childProcStr->proc_sem);
         array_destroy(childProcStr->children_pids);
-        array_remove(procStructArray, childLocation);
         array_remove(procStr->children_pids, i);
+        array_remove(procStructArray, childLocation);
         arraySize--;
         i--;
       }

@@ -138,6 +138,7 @@ syscall(struct trapframe *tf)
 	 case SYS_fork:
 	 	err = sys_fork(tf, (pid_t *)&retval);
 	 	break;
+	 	
 #endif //OPT_A2
  
 	default:
@@ -188,12 +189,14 @@ enter_forked_process(struct trapframe *tf)
 {
 	#if OPT_A2
 		struct trapframe forkTf = *tf;
-		forkTf.tf_v0 = 0;
 		forkTf.tf_a3 = 0; //signal no error
+		forkTf.tf_v0 = 0;
 		forkTf.tf_epc += 4; //advance the PC, to avoid the syscall again
 
 		as_activate();
 		mips_usermode(&forkTf);
+
+		panic("can't come here");
 	#else
 		(void)tf;
 	#endif //OPT_A2
