@@ -22,9 +22,9 @@ void sys__exit(int exitcode) {
   #if OPT_A2
 
     int parentLocation = locatePid(p->p_pid);
+    struct procStruct *parentProcStr = array_get(procStructArray, parentLocation)
     parentProcStr->exitcode = _MKWAIT_EXIT(exitcode);
     cleanChildren(parentLocation);
-    
 
     V(parentProcStr->proc_sem);
 
