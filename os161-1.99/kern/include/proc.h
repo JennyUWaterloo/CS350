@@ -87,6 +87,7 @@ struct procStruct {
 
 int checkAndUpdatePid(int pid);
 int locatePid(int pid);
+int getExitCode(int pid);
 
 #endif //OPT_A2
 
