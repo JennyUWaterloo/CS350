@@ -16,7 +16,6 @@
 extern struct array *procStructArray;
 
 void sys__exit(int exitcode) {
-
   struct addrspace *as;
   struct proc *p = curproc;
   
@@ -125,22 +124,7 @@ sys_waitpid(pid_t pid,
   } else if (procStr == NULL) {
     return (ESRCH);
   }
-
-  struct lock *proc_lock = lock_create("proc_lock");
-  KASSERT(proc_lock != NULL);
-  lock_acquire(proc_lock);
-
-    int exitstatusLocation = locatePid(pid);
-    struct procStruct *exitProcStr = array_get(procStructArray, exitstatusLocation);
-    if (exitProcStr == NULL || exitProcStr->proc_sem == NULL) {
-      return (ESRCH);
-    }
-
-  lock_release(proc_lock);
-
-  P(exitProcStr->proc_sem);
-
-  exitstatus = exitProcStr->exitcode;
+  exitcode = getExitCode(pid);
 
   #endif //OPT_A2
 

@@ -500,4 +500,20 @@ int locatePid(int pid)
 	return location;
 }
 
+int getExitCode(int pid)
+{
+	lock_acquire(proc_lock);
+
+	    int childLocation = locatePid(pid);
+	    struct procStruct *exitProcStr = array_get(procStructArray, childLocation);
+	    if (exitProcStr == NULL || exitProcStr->proc_sem == NULL) {
+	      return (ESRCH);
+	    }
+
+  	lock_release(proc_lock);
+
+	P(exitProcStr->proc_sem);
+	return exitProcStr->exitcode;
+}
+
 #endif //OPT_A2
