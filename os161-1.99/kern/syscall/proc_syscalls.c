@@ -21,39 +21,12 @@ void sys__exit(int exitcode) {
   
   #if OPT_A2
 
-  // struct lock *proc_lock = lock_create("proc_lock");
-  // KASSERT(proc_lock != NULL);
-  // lock_acquire(proc_lock);
-
     int parentLocation = locatePid(p->p_pid);
-    struct procStruct *parentProcStr = array_get(procStructArray, parentLocation);
-    struct procStruct *childProcStr;
     parentProcStr->exitcode = _MKWAIT_EXIT(exitcode);
-    int *childPid;
-    int arraySize = array_num(parentProcStr->children_pids);
-    int childLocation;
-
-    for (int i = 0; i < arraySize; i++) {
-      childPid = array_get(parentProcStr->children_pids, i);
-      childLocation = locatePid(*childPid);
-      childProcStr = array_get(procStructArray, childLocation);
-
-      if(childProcStr->exitcode >= 0) {
-        int childArraySize = array_num(childProcStr->children_pids);
-        for (int j = 0; j < childArraySize; j++) {
-          array_remove(childProcStr->children_pids, j);
-        }
-        array_destroy(childProcStr->children_pids);
-        sem_destroy(childProcStr->proc_sem);
-        array_remove(procStructArray, childLocation);
-        arraySize--;
-        i--;
-      }
-    }
+    cleanChildren(parentLocation);
+    
 
     V(parentProcStr->proc_sem);
-
-  // lock_release(proc_lock);
 
   #endif //OPT_A2
 

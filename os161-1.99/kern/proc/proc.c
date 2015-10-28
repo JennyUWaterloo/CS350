@@ -293,8 +293,8 @@ proc_create_runprogram(const char *name)
 
 	struct array *children_pids = array_create();
 	array_setsize(children_pids, 0);
-
 	procStr->children_pids = children_pids;
+
 	procStr->exitcode = -1;
 
 	if (pid_left == 0) {
@@ -469,8 +469,8 @@ curproc_setas(struct addrspace *newas)
 
 int checkAndUpdatePid(int pid)
 {
-	struct procStruct *tempProc;
 	int updatedPid = pid;
+	struct procStruct *tempProc;
 	int arrayNum = array_num(procStructArray); //had to do this to get rid of "comparison between signed and unsigned warning"
 	for (int i = 0; i < arrayNum; i++) {
 		tempProc = array_get(procStructArray, i);
@@ -517,6 +517,34 @@ int getExitCode(int pid)
 
 	P(exitProcStr->proc_sem);
 	return exitProcStr->exitcode;
+}
+
+int cleanChildren(int parentLocation)
+{
+	struct procStruct *parentProcStr = array_get(procStructArray, parentLocation);
+    struct procStruct *childProcStr;
+    int *childPid;
+    int childLocation;
+    int arraySize = array_num(parentProcStr->children_pids);
+
+    for (int i = 0; i < arraySize; i++) {
+      childPid = array_get(parentProcStr->children_pids, i);
+      childLocation = locatePid(*childPid);
+      childProcStr = array_get(procStructArray, childLocation);
+
+      if(childProcStr->exitcode >= 0) {
+      	array_remove(parentProcStr->children_pids, i);
+        int childArraySize = array_num(childProcStr->children_pids);
+        for (int j = 0; j < childArraySize; j++) {
+          array_remove(childProcStr->children_pids, j);
+        }
+        array_destroy(childProcStr->children_pids);
+        sem_destroy(childProcStr->proc_sem);
+        array_remove(procStructArray, childLocation);
+        arraySize--;
+        i--;
+      }
+    }
 }
 
 #endif //OPT_A2
