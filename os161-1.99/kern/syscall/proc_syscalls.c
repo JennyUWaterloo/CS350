@@ -52,7 +52,7 @@ void sys__exit(int exitcode) {
       }
     }
 
-    V(procStr->proc_sem);
+    V(parentProcStr->proc_sem);
 
   // lock_release(proc_lock);
 
