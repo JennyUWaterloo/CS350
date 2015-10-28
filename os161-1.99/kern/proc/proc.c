@@ -545,6 +545,7 @@ int cleanChildren(int parentLocation)
         i--;
       }
     }
+    return 0;
 }
 
 #endif //OPT_A2
