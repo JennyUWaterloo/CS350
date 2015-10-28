@@ -26,27 +26,26 @@ void sys__exit(int exitcode) {
   // KASSERT(proc_lock != NULL);
   // lock_acquire(proc_lock);
 
-    int location = locatePid(p->p_pid);
-    struct procStruct *procStr = array_get(procStructArray, location);
+    int parentLocation = locatePid(p->p_pid);
+    struct procStruct *parentProcStr = array_get(procStructArray, parentLocation);
     struct procStruct *childProcStr;
-    procStr->exitcode = _MKWAIT_EXIT(exitcode);
+    parentProcStr->exitcode = _MKWAIT_EXIT(exitcode);
     int *childPid;
-    int arraySize = array_num(procStr->children_pids);
+    int arraySize = array_num(parentProcStr->children_pids);
     int childLocation;
 
     for (int i = 0; i < arraySize; i++) {
-      childPid = array_get(procStr->children_pids, i);
+      childPid = array_get(parentProcStr->children_pids, i);
       childLocation = locatePid(*childPid);
       childProcStr = array_get(procStructArray, childLocation);
 
       if(childProcStr->exitcode >= 0) {
-        int arraySize = array_num(childProcStr->children_pids);
-        for (int j = 0; j < arraySize; j++) {
+        int childArraySize = array_num(childProcStr->children_pids);
+        for (int j = 0; j < childArraySize; j++) {
           array_remove(childProcStr->children_pids, j);
         }
         array_destroy(childProcStr->children_pids);
         sem_destroy(childProcStr->proc_sem);
-        // array_remove(procStr->children_pids, i);
         array_remove(procStructArray, childLocation);
         arraySize--;
         i--;
