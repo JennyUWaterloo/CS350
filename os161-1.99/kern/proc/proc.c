@@ -526,7 +526,7 @@ int cleanChildren(int parentLocation)
     int *childPid;
     int childLocation;
 
-    spinlock_acquire(&proc->p_lock);
+    lock_acquire(proc_lock);
 
 	    int arraySize = array_num(parentProcStr->children_pids);
 
@@ -548,7 +548,7 @@ int cleanChildren(int parentLocation)
 	        i--;
 	      }
 	    }
-	spinlock_release(&proc->p_lock);
+	lock_release(proc_lock);
     return 0;
 }
 
