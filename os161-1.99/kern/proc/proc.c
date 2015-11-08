@@ -525,26 +525,30 @@ int cleanChildren(int parentLocation)
     struct procStruct *childProcStr;
     int *childPid;
     int childLocation;
-    int arraySize = array_num(parentProcStr->children_pids);
 
-    for (int i = 0; i < arraySize; i++) {
-      childPid = array_get(parentProcStr->children_pids, i);
-      childLocation = locatePid(*childPid);
-      childProcStr = array_get(procStructArray, childLocation);
+    spinlock_acquire(&proc->p_lock);
 
-      if(childProcStr->exitcode >= 0) {
-      	array_remove(parentProcStr->children_pids, i);
-        int childArraySize = array_num(childProcStr->children_pids);
-        for (int j = 0; j < childArraySize; j++) {
-          array_remove(childProcStr->children_pids, j);
-        }
-        array_destroy(childProcStr->children_pids);
-        sem_destroy(childProcStr->proc_sem);
-        array_remove(procStructArray, childLocation);
-        arraySize--;
-        i--;
-      }
-    }
+	    int arraySize = array_num(parentProcStr->children_pids);
+
+	    for (int i = 0; i < arraySize; i++) {
+	      childPid = array_get(parentProcStr->children_pids, i);
+	      childLocation = locatePid(*childPid);
+	      childProcStr = array_get(procStructArray, childLocation);
+
+	      if(childProcStr->exitcode >= 0) {
+	      	array_remove(parentProcStr->children_pids, i);
+	        int childArraySize = array_num(childProcStr->children_pids);
+	        for (int j = 0; j < childArraySize; j++) {
+	          array_remove(childProcStr->children_pids, j);
+	        }
+	        array_destroy(childProcStr->children_pids);
+	        sem_destroy(childProcStr->proc_sem);
+	        array_remove(procStructArray, childLocation);
+	        arraySize--;
+	        i--;
+	      }
+	    }
+	spinlock_release(&proc->p_lock);
     return 0;
 }
 
