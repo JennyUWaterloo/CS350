@@ -44,6 +44,7 @@
 #include <vfs.h>
 #include <syscall.h>
 #include <test.h>
+#include "opt-A2.h"
 
 /*
  * Load program "progname" and start running it in usermode.
@@ -52,7 +53,7 @@
  * Calls vfs_open on progname and thus may destroy it.
  */
 int
-runprogram(char *progname)
+runprogram(char *progname, char **args)
 {
 	struct addrspace *as;
 	struct vnode *v;
@@ -96,6 +97,42 @@ runprogram(char *progname)
 		/* p_addrspace will go away when curproc is destroyed */
 		return result;
 	}
+
+	#if OPT_A2
+		int argsCount;
+			while (args[args] != NULL) {
+				argsCount++;
+			}
+
+		//align - when storing items on the stack, pad each item such that they are 8-byte aligned
+		while (stackptr % 8 != 0) {
+			stackptr--;
+		}
+
+		vaddr_t argsptr[argsCount+1];
+
+		for (int i = argsCount-1; i >= 0; i--) {
+			stackptr = stackptr - strlen(newArgs[i]) + 1;
+
+			err = copyoutstr(newArgs[i], (userptr_t)stackptr, strlen(newArgs[i]) + 1, NULL);
+			if (err) return err;
+
+			argsptr[i] = stackptr;
+		}
+
+		//align again - Strings don't have to be 4 or 8-byte aligned. However, pointers to strings need to be 4-byte aligned
+		while (stackptr % 4 != 0) {
+			stackptr--;
+		}
+
+		argsptr[argsCount] = 0;
+
+		for (int i = argsCount; i >= 0; i--) {
+			stackptr = stackptr - ROUNDUP(sizeof(vaddr_t), 4);
+			err = copyout(&argsptr[i], (userptr_t)stackptr, sizeof(vaddr_t));
+			if (err) return err;
+		}
+	#endif
 
 	/* Warp to user mode. */
 	enter_new_process(0 /*argc*/, NULL /*userspace addr of argv*/,

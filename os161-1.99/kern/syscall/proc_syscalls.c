@@ -142,3 +142,112 @@ int sys_fork(struct trapframe *tf, pid_t *retval) {
   *retval = fork_proc->p_pid;
   return 0;
 }
+
+int sys_execv(const char *program, char **args) {
+	int err;
+
+	if (program == NULL) return ENOENT;
+
+	struct addrspace *oldAddrspace = curproc_getas();
+
+	int argsCount;
+	while (args[argsCount] != NULL) {
+		if (strlen(args[argsCount]) >= 1025) return E2BIG;
+		argsCount++;
+	}
+	if (argsCount >= 65) {
+		return E2BIG;
+	}
+
+	char **newArgs = kmalloc((argsCount+1) * sizeof(char));
+	for (int i = 0; i < argsCount; i++) {
+		newArgs[i] = kmalloc((strlen(args[i])+1) * sizeof(char));
+
+		err = copyinstr((userptr_t)args[i], newArgs[i], strlen(args[i])+1, NULL);
+		if (err) return err;
+	}
+
+	newArgs[argsCount] = NULL;
+
+	char *newProgram = kmalloc(sizeof(char*)*(strlen(program)+1));
+	if (newProgram == NULL) return ENOMEM;
+
+	int result = copyinstr((userptr_t)program, newProgram, strlen(program)+1, NULL);
+	if (result != 0) return ENOEXEC;
+
+	//start of copy from kern/syscall/runprogram.c
+
+	struct addrspace *as;
+	struct vnode *v;
+	vaddr_t entrypoint, stackptr;
+
+	/* Open the file. */
+	result = vfs_open(progname, O_RDONLY, 0, &v);
+	if (result) {
+		return result;
+	}
+
+	/* Create a new address space. */
+	as = as_create();
+	if (as ==NULL) {
+		vfs_close(v);
+		return ENOMEM;
+	}
+
+	/* Switch to it and activate it. */
+	curproc_setas(as);
+	as_activate();
+
+	/* Load the executable. */
+	result = load_elf(v, &entrypoint);
+	if (result) {
+		/* p_addrspace will go away when curproc is destroyed */
+		vfs_close(v);
+		return result;
+	}
+
+	/* Done with the file now. */
+	vfs_close(v);
+
+	/* Define the user stack in the address space */
+	result = as_define_stack(as, &stackptr);
+	if (result) {
+		/* p_addrspace will go away when curproc is destroyed */
+		return result;
+	}
+
+	//end of copy
+
+	//align - when storing items on the stack, pad each item such that they are 8-byte aligned
+	while (stackptr % 8 != 0) {
+		stackptr--;
+	}
+
+	vaddr_t argsptr;
+
+	for (int i = argsCount-1; i >= 0; i--) {
+		stackptr = stackptr - strlen(newArgs[i]) + 1;
+
+		err = copyoutstr(newArgs[i], (userptr_t)stackptr, strlen(newArgs[i]) + 1, NULL);
+		if (err) return err;
+
+		argsptr[i] = stackptr;
+	}
+
+	//align again - Strings don't have to be 4 or 8-byte aligned. However, pointers to strings need to be 4-byte aligned
+	while (stackptr % 4 != 0) {
+		stackptr--;
+	}
+
+	argsptr[argsCount] = 0;
+
+	for (int i = argsCount; i >= 0; i--) {
+		stackptr = stackptr - ROUNDUP(sizeof(vaddr_t), 4);
+		err = copyout(&argsptr[i], (userptr_t)stackptr, sizeof(vaddr_t));
+		if (err) return err;
+	}
+
+	as_destroy(oldAddrspace);
+
+	enter_new_process(argsCount, (userptr_t)stackptr, stackptr, entrypoint);
+}
