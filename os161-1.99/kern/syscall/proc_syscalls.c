@@ -12,6 +12,8 @@
 #include <mips/trapframe.h>
 #include "opt-A2.h"
 #include <synch.h>
+#include <vfs.h>
+#include <kern/fcntl.h>
 
 extern struct array *procStructArray;
 
@@ -182,7 +184,7 @@ int sys_execv(const char *program, char **args) {
 	vaddr_t entrypoint, stackptr;
 
 	/* Open the file. */
-	result = vfs_open(progname, O_RDONLY, 0, &v);
+	result = vfs_open(newProgram, O_RDONLY, 0, &v);
 	if (result) {
 		return result;
 	}
