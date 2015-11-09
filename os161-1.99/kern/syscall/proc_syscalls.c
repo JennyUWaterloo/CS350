@@ -225,7 +225,7 @@ int sys_execv(const char *program, char **args) {
 		stackptr--;
 	}
 
-	vaddr_t argsptr;
+	vaddr_t argsptr[argsCount+1];
 
 	for (int i = argsCount-1; i >= 0; i--) {
 		stackptr = stackptr - strlen(newArgs[i]) + 1;
@@ -252,4 +252,6 @@ int sys_execv(const char *program, char **args) {
 	as_destroy(oldAddrspace);
 
 	enter_new_process(argsCount, (userptr_t)stackptr, stackptr, entrypoint);
+
+  return EINVAL;
 }
