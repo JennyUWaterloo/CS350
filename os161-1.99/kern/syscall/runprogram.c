@@ -45,6 +45,7 @@
 #include <syscall.h>
 #include <test.h>
 #include "opt-A2.h"
+#include <copyinout.h>
 
 /*
  * Load program "progname" and start running it in usermode.
@@ -99,8 +100,8 @@ runprogram(char *progname, char **args)
 	}
 
 	#if OPT_A2
-		int argsCount;
-			while (args[args] != NULL) {
+		int argsCount = 0;
+			while (args[argsCount] != NULL) {
 				argsCount++;
 			}
 
@@ -110,7 +111,7 @@ runprogram(char *progname, char **args)
 		}
 
 		vaddr_t argsptr[argsCount+1];
-
+		int err;
 		for (int i = argsCount-1; i >= 0; i--) {
 			stackptr = stackptr - strlen(args[i]) + 1;
 
