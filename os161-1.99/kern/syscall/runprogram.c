@@ -113,7 +113,7 @@ runprogram(char *progname, char **args)
 		vaddr_t argsptr[argsCount+1];
 		int err;
 		for (int i = argsCount-1; i >= 0; i--) {
-			stackptr = stackptr - strlen(args[i]) + 1;
+			stackptr = stackptr - (strlen(args[i]) + 1);
 
 			err = copyoutstr(args[i], (userptr_t)stackptr, strlen(args[i]) + 1, NULL);
 			if (err) return err;
