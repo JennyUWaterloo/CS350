@@ -231,7 +231,9 @@ int sys_execv(const char *program, char **args) {
 		stackptr = stackptr - (strlen(newArgs[i]) + 1);
 
 		err = copyoutstr(newArgs[i], (userptr_t)stackptr, strlen(newArgs[i]) + 1, NULL);
-		if (err) return err;
+		if (err != 0) {
+      return err;
+    }
 
 		argsptr[i] = stackptr;
 	}
@@ -244,9 +246,12 @@ int sys_execv(const char *program, char **args) {
 	argsptr[argsCount] = 0;
 
 	for (int i = argsCount; i >= 0; i--) {
-		stackptr = stackptr - ROUNDUP(sizeof(vaddr_t), 4);
+		stackptr = stackptr - (ROUNDUP(sizeof(vaddr_t), 4));
+
 		err = copyout(&argsptr[i], (userptr_t)stackptr, sizeof(vaddr_t));
-		if (err) return err;
+		if (err != 0) {
+      return err;
+    }
 	}
 
 	as_destroy(oldAddrspace);
