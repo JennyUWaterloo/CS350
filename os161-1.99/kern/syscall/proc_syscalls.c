@@ -152,7 +152,7 @@ int sys_execv(const char *program, char **args) {
 
 	struct addrspace *oldAddrspace = curproc_getas();
 
-	int argsCount;
+	int argsCount = 0;
 	while (args[argsCount] != NULL) {
 		if (strlen(args[argsCount]) >= 1025) return E2BIG;
 		argsCount++;
@@ -228,7 +228,7 @@ int sys_execv(const char *program, char **args) {
 	vaddr_t argsptr[argsCount+1];
 
 	for (int i = argsCount-1; i >= 0; i--) {
-		stackptr = stackptr - strlen(newArgs[i]) + 1;
+		stackptr = stackptr - (strlen(newArgs[i]) + 1);
 
 		err = copyoutstr(newArgs[i], (userptr_t)stackptr, strlen(newArgs[i]) + 1, NULL);
 		if (err) return err;
