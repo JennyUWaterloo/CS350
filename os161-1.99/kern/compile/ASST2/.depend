@@ -364,7 +364,7 @@ proc_syscalls.o: ../../syscall/proc_syscalls.c ../../include/types.h \
   includelinks/kern/machine/setjmp.h ../../include/proc.h opt-A2.h \
   ../../include/addrspace.h ../../include/vm.h includelinks/machine/vm.h \
   ../../include/copyinout.h includelinks/mips/trapframe.h opt-A2.h \
-  ../../include/synch.h
+  ../../include/synch.h ../../include/vfs.h ../../include/kern/fcntl.h
 runprogram.o: ../../syscall/runprogram.c ../../include/types.h \
   ../../include/kern/types.h includelinks/kern/machine/types.h \
   includelinks/machine/types.h ../../include/kern/errno.h \
@@ -376,7 +376,8 @@ runprogram.o: ../../syscall/runprogram.c ../../include/types.h \
   includelinks/kern/machine/setjmp.h opt-A2.h ../../include/current.h \
   includelinks/machine/current.h ../../include/addrspace.h \
   ../../include/vm.h includelinks/machine/vm.h ../../include/vfs.h \
-  ../../include/syscall.h ../../include/test.h
+  ../../include/syscall.h ../../include/test.h opt-A2.h \
+  ../../include/copyinout.h
 time_syscalls.o: ../../syscall/time_syscalls.c ../../include/types.h \
   ../../include/kern/types.h includelinks/kern/machine/types.h \
   includelinks/machine/types.h ../../include/clock.h opt-synchprobs.h \
