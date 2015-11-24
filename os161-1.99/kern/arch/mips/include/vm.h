@@ -27,6 +27,8 @@
  * SUCH DAMAGE.
  */
 
+ #include "opt-A3.h"
+
 #ifndef _MIPS_VM_H_
 #define _MIPS_VM_H_
 
@@ -65,6 +67,7 @@
  * exception handler code) when converted to a vaddr it's *not* NULL, *is*
  * a valid address, and will make a *huge* mess if you scribble on it.
  */
+
 #define PADDR_TO_KVADDR(paddr) ((paddr)+MIPS_KSEG0)
 
 /*

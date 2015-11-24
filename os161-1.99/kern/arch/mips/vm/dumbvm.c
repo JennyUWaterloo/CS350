@@ -77,6 +77,7 @@ vm_bootstrap(void)
 		int curFrames = (hi - lo) / PAGE_SIZE;
 
 		lo = lo + (curFrames * (sizeof(struct coremap)));
+
 		while (lo % PAGE_SIZE != 0) {
 			//align
 			lo++;
@@ -200,9 +201,6 @@ free_kpages(vaddr_t addr)
 				for (int i = 0; i < totalFrames; i++) {
 					if (addr == coremap[i].addr) {
 						isFree = true;
-					}
-
-					if (isFree) {
 						coremap[i].isUsed = false;
 						if (!coremap[i].isContiguous) break;
 					}
@@ -240,6 +238,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 	uint32_t ehi, elo;
 	struct addrspace *as;
 	int spl;
+
 	bool isValidTextAddress=false;
 
 	faultaddress &= PAGE_FRAME;
@@ -347,7 +346,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		elo = paddr | TLBLO_DIRTY | TLBLO_VALID;
 
 		if (isValidTextAddress && as->as_isLoaded) {
-			elo = elo & TLBLO_DIRTY;
+			elo = elo & ~TLBLO_DIRTY;
 		}
 
 		tlb_random(ehi, elo);
@@ -355,11 +354,13 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		splx(spl);
 		return 0;
 
-	#endif //OPT_A3
+	#else	
 
 	kprintf("dumbvm: Ran out of TLB entries - cannot handle page fault\n");
 	splx(spl);
 	return EFAULT;
+
+	#endif //OPT_A3
 }
 
 struct addrspace *
