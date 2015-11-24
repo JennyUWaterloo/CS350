@@ -52,10 +52,52 @@
  */
 static struct spinlock stealmem_lock = SPINLOCK_INITIALIZER;
 
+struct coremap {
+	bool isContiguous;
+	bool isUsed;
+	paddr_t addr;
+};
+
+struct coremap *coremap;
+int totalFrames;
+bool isCoreSet = false;
+
+
 void
 vm_bootstrap(void)
 {
-	/* Do nothing. */
+	#if OPT_A3
+
+		paddr_t lo;
+		paddr_t hi;
+		ram_getsize(&lo, &hi);
+
+		coremap = (struct coremap *)PADDR_TO_KVADDR(lo);
+
+		int curFrames = (hi - lo) / PAGE_SIZE;
+
+		lo = lo + (curFrames * (sizeof(struct coremap)));
+		while (lo % PAGE_SIZE != 0) {
+			//align
+			lo++;
+		}
+
+		//update curFrames
+		curFrames = (hi - lo) / PAGE_SIZE;
+
+		paddr_t pagePosition = lo;
+		for (int i = 0; i < curFrames; i++) {
+			coremap[i].isContiguous = false;
+			coremap[i].isUsed = false;
+			coremap[i].addr = pagePosition;
+			pagePosition = pagePosition + PAGE_SIZE;
+		}
+
+		//set up totalFrames
+		totalFrames = curFrames;
+
+		isCoreSet = true;
+	#endif //OPT_A3
 }
 
 static
@@ -66,8 +108,64 @@ getppages(unsigned long npages)
 
 	spinlock_acquire(&stealmem_lock);
 
-	addr = ram_stealmem(npages);
-	
+		#if OPT_A3
+
+			if (isCoreSet) {
+				int start;
+				bool isAvailable;
+
+				for (int i = 0; i < totalFrames; i++) {
+					if (isAvailable) break;
+
+					if (!coremap[i].isUsed) {
+						int count = 1;
+
+						if (((int)npages) > 1) {
+							for (int j = i+1; j < i + (int)npages; j++) {
+								if (!coremap[j].isUsed) {
+									count++;
+									if (count == (int)npages) {
+										start = i;
+										isAvailable = true;
+									}
+								} else {
+									i = i + count; //skip
+									break;
+								}
+							}
+						} else {
+							start = i;
+							isAvailable = true;
+						}
+					}
+				}
+
+				if (isAvailable) {
+					addr = coremap[start].addr;
+
+					for (int i = 0; i < (int)npages; i++) {
+						if (i != pages-1) {
+							coremap[i+start].isContiguous = true;
+						} else {
+							coremap[i+start].isContiguous = false;
+						}
+						coremap[i+start].isUsed = true;
+					}
+				} else {
+					spinlock_release(&stealmem_lock);
+					return ENOMEM;
+				}
+
+			} else {
+				addr = ram_stealmem(npages);
+			}
+
+		#else
+
+			addr = ram_stealmem(npages);
+		
+		#endif //OPT_A3
+
 	spinlock_release(&stealmem_lock);
 	return addr;
 }
@@ -87,9 +185,37 @@ alloc_kpages(int npages)
 void 
 free_kpages(vaddr_t addr)
 {
-	/* nothing - leak the memory. */
+	#if OPT_A3
 
-	(void)addr;
+		spinlock_acquire(&stealmem_lock);
+
+			if (isCoreSet) {
+				if (addr == 0) {
+					spinlock_release(&stealmem_lock);
+					return;
+				}
+
+				bool isFree = false;
+
+				for (int i = 0; i < totalFrames; i++) {
+					if (addr == coremap[i].addr) {
+						isFree = true;
+					}
+
+					if (isFree) {
+						coremap[i].isUsed = false;
+						if (!coremap[i].isContiguous) break;
+					}
+				}
+			}
+
+		spinlock_release(&stealmem_lock);
+
+	#else
+
+		(void)addr;
+
+	#endif //OPT_A3
 }
 
 void
@@ -262,6 +388,13 @@ as_create(void)
 void
 as_destroy(struct addrspace *as)
 {
+	#if OPT_A3
+
+		free_kpages(as->as_pbase1);
+		free_kpages(as->as_pbase2);
+		free_kpages(as->as_stackpbase);
+
+	#endif
 	kfree(as);
 }
 
@@ -310,10 +443,34 @@ as_define_region(struct addrspace *as, vaddr_t vaddr, size_t sz,
 
 	npages = sz / PAGE_SIZE;
 
-	/* We don't use these - all pages are read-write */
-	(void)readable;
-	(void)writeable;
-	(void)executable;
+	#if OPT_A3
+
+		if (readable) {
+			as->as_read = 1;
+		} else {
+			as->as_read = 0;
+		}
+
+		if (writeable) {
+			as->as_write = 1;
+		} else {
+			as->as_write = 0;
+		}
+
+		if (executable) {
+			as->as_exec = 1;
+		} else {
+			as->as_exec = 0;
+		}
+
+	#else
+
+		/* We don't use these - all pages are read-write */
+		(void)readable;
+		(void)writeable;
+		(void)executable;
+
+	#endif //OPT_A3
 
 	if (as->as_vbase1 == 0) {
 		as->as_vbase1 = vaddr;
