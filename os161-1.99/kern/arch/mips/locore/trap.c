@@ -40,6 +40,8 @@
 #include <mainbus.h>
 #include <syscall.h>
  #include "opt-A3.h"
+ #include <addrspace.h>
+ #include <proc.h>
 
 
 /* in exception.S */
