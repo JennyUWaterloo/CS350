@@ -113,11 +113,9 @@ getppages(unsigned long npages)
 
 			if (isCoreSet) {
 				int start;
-				bool isAvailable;
+				bool isAvailable=false;
 
 				for (int i = 0; i < totalFrames; i++) {
-					if (isAvailable) break;
-
 					if (!coremap[i].isUsed) {
 						int count = 1;
 
@@ -128,6 +126,7 @@ getppages(unsigned long npages)
 									if (count == (int)npages) {
 										start = i;
 										isAvailable = true;
+										break;
 									}
 								} else {
 									i = i + count; //skip
@@ -137,6 +136,7 @@ getppages(unsigned long npages)
 						} else {
 							start = i;
 							isAvailable = true;
+							break;
 						}
 					}
 				}
@@ -201,6 +201,8 @@ free_kpages(vaddr_t addr)
 				for (int i = 0; i < totalFrames; i++) {
 					if (addr == coremap[i].addr) {
 						isFree = true;
+					}
+					if (isFree) {
 						coremap[i].isUsed = false;
 						if (!coremap[i].isContiguous) break;
 					}
@@ -250,8 +252,9 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		/* We always create pages read-write, so we can't get this */
 		#if OPT_A3
 			return EINVAL;
-		#endif //OPT_A3
+		#else
 		panic("dumbvm: got VM_FAULT_READONLY\n");
+		#endif //OPT_A3
 	    case VM_FAULT_READ:
 	    case VM_FAULT_WRITE:
 		break;
@@ -350,7 +353,6 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		}
 
 		tlb_random(ehi, elo);
-
 		splx(spl);
 		return 0;
 
