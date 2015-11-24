@@ -240,7 +240,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 	uint32_t ehi, elo;
 	struct addrspace *as;
 	int spl;
-	bool isValidTextAddress;
+	bool isValidTextAddress=false;
 
 	faultaddress &= PAGE_FRAME;
 
@@ -330,7 +330,7 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		#if OPT_A3
 
 			if (isValidTextAddress && as->as_isLoaded) {
-				elo = elo & TLBLO_DIRTY;
+				elo = elo & ~TLBLO_DIRTY;
 			}
 
 		#endif //OPT_A3
