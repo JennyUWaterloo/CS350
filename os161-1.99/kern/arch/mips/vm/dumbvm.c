@@ -144,7 +144,7 @@ getppages(unsigned long npages)
 					addr = coremap[start].addr;
 
 					for (int i = 0; i < (int)npages; i++) {
-						if (i != pages-1) {
+						if (i != (int)npages-1) {
 							coremap[i+start].isContiguous = true;
 						} else {
 							coremap[i+start].isContiguous = false;
@@ -377,10 +377,7 @@ as_create(void)
 	as->as_pbase2 = 0;
 	as->as_npages2 = 0;
 	as->as_stackpbase = 0;
-
-	#if OPT_A3
-		as->as_isLoaded = false;
-	#endif //OPT_A3
+	as->as_isLoaded = false;
 
 	return as;
 }
