@@ -55,6 +55,11 @@ struct addrspace {
   paddr_t as_pbase2;
   size_t as_npages2;
   paddr_t as_stackpbase;
+
+  bool as_isLoaded;
+  int as_read;
+  int as_write;
+  int as_exec;
 };
 
 /*
