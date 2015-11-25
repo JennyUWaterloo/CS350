@@ -329,13 +329,13 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		ehi = faultaddress;
 		elo = paddr | TLBLO_DIRTY | TLBLO_VALID;
 
-		// #if OPT_A3
+		#if OPT_A3
 
-		// 	if (isValidTextAddress && as->as_isLoaded) {
-		// 		elo = elo & ~TLBLO_DIRTY;
-		// 	}
+			if (isValidTextAddress && as->as_isLoaded) {
+				elo = elo & ~TLBLO_DIRTY;
+			}
 
-		// #endif //OPT_A3
+		#endif //OPT_A3
 
 		DEBUG(DB_VM, "dumbvm: 0x%x -> 0x%x\n", faultaddress, paddr);
 		tlb_write(ehi, elo, i);
@@ -348,9 +348,9 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		ehi = faultaddress;
 		elo = paddr | TLBLO_DIRTY | TLBLO_VALID;
 
-		// if (isValidTextAddress && as->as_isLoaded) {
-		// 	elo = elo & ~TLBLO_DIRTY;
-		// }
+		if (isValidTextAddress && as->as_isLoaded) {
+			elo = elo & ~TLBLO_DIRTY;
+		}
 
 		tlb_random(ehi, elo);
 		splx(spl);
@@ -443,34 +443,34 @@ as_define_region(struct addrspace *as, vaddr_t vaddr, size_t sz,
 
 	npages = sz / PAGE_SIZE;
 
-	// #if OPT_A3
+	#if OPT_A3
 
-	// 	if (readable) {
-	// 		as->as_read = 1;
-	// 	} else {
-	// 		as->as_read = 0;
-	// 	}
+		if (readable) {
+			as->as_read = 1;
+		} else {
+			as->as_read = 0;
+		}
 
-	// 	if (writeable) {
-	// 		as->as_write = 1;
-	// 	} else {
-	// 		as->as_write = 0;
-	// 	}
+		if (writeable) {
+			as->as_write = 1;
+		} else {
+			as->as_write = 0;
+		}
 
-	// 	if (executable) {
-	// 		as->as_exec = 1;
-	// 	} else {
-	// 		as->as_exec = 0;
-	// 	}
+		if (executable) {
+			as->as_exec = 1;
+		} else {
+			as->as_exec = 0;
+		}
 
-	// #else
+	#else
 
 		/* We don't use these - all pages are read-write */
 		(void)readable;
 		(void)writeable;
 		(void)executable;
 
-	// #endif //OPT_A3
+	#endif //OPT_A3
 
 	if (as->as_vbase1 == 0) {
 		as->as_vbase1 = vaddr;
@@ -530,15 +530,15 @@ as_prepare_load(struct addrspace *as)
 int
 as_complete_load(struct addrspace *as)
 {
-	// #if OPT_A3
+	#if OPT_A3
 
-	// 	as->as_isLoaded = true;
+		as->as_isLoaded = true;
 
-	// #else
+	#else
 
 		(void)as;
 
-	// #endif //OPT_A3
+	#endif //OPT_A3
 
 	return 0;
 }
