@@ -343,26 +343,26 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		return 0;
 	}
 
-	// #if OPT_A3
+	#if OPT_A3
 
-	// 	ehi = faultaddress;
-	// 	elo = paddr | TLBLO_DIRTY | TLBLO_VALID;
+		ehi = faultaddress;
+		elo = paddr | TLBLO_DIRTY | TLBLO_VALID;
 
-	// 	if (isValidTextAddress && as->as_isLoaded) {
-	// 		elo = elo & ~TLBLO_DIRTY;
-	// 	}
+		// if (isValidTextAddress && as->as_isLoaded) {
+		// 	elo = elo & ~TLBLO_DIRTY;
+		// }
 
-	// 	tlb_random(ehi, elo);
-	// 	splx(spl);
-	// 	return 0;
+		tlb_random(ehi, elo);
+		splx(spl);
+		return 0;
 
-	// #else	
+	#else	
 
 	kprintf("dumbvm: Ran out of TLB entries - cannot handle page fault\n");
 	splx(spl);
 	return EFAULT;
 
-	// #endif //OPT_A3
+	#endif //OPT_A3
 }
 
 struct addrspace *
