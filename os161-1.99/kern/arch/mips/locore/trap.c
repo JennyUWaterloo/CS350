@@ -40,8 +40,8 @@
 #include <mainbus.h>
 #include <syscall.h>
  #include "opt-A3.h"
- #include <addrspace.h>
  #include <proc.h>
+ #include <addrspace.h>
 
 
 /* in exception.S */
@@ -116,8 +116,8 @@ kill_curthread(vaddr_t epc, unsigned code, vaddr_t vaddr)
 	 */
 
 	#if OPT_A3
-	 	(void)vaddr;
 	 	(void)epc;
+	 	(void)vaddr;
 
 	 	//from sys_exit
 	 	struct addrspace *as;

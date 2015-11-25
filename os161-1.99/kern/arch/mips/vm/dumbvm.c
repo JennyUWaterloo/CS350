@@ -66,39 +66,39 @@ bool isCoreSet = false;
 void
 vm_bootstrap(void)
 {
-	#if OPT_A3
+	// #if OPT_A3
 
-		paddr_t lo;
-		paddr_t hi;
-		ram_getsize(&lo, &hi);
+	// 	paddr_t lo;
+	// 	paddr_t hi;
+	// 	ram_getsize(&lo, &hi);
 
-		coremap = (struct coremap *)PADDR_TO_KVADDR(lo);
+	// 	coremap = (struct coremap *)PADDR_TO_KVADDR(lo);
 
-		int curFrames = (hi - lo) / PAGE_SIZE;
+	// 	int curFrames = (hi - lo) / PAGE_SIZE;
 
-		lo = lo + (curFrames * (sizeof(struct coremap)));
+	// 	lo = lo + (curFrames * (sizeof(struct coremap)));
 
-		while (lo % PAGE_SIZE != 0) {
-			//align
-			lo++;
-		}
+	// 	while (lo % PAGE_SIZE != 0) {
+	// 		//align
+	// 		lo++;
+	// 	}
 
-		//update curFrames
-		curFrames = (hi - lo) / PAGE_SIZE;
+	// 	//update curFrames
+	// 	curFrames = (hi - lo) / PAGE_SIZE;
 
-		paddr_t pagePosition = lo;
-		for (int i = 0; i < curFrames; i++) {
-			coremap[i].isContiguous = false;
-			coremap[i].isUsed = false;
-			coremap[i].addr = pagePosition;
-			pagePosition = pagePosition + PAGE_SIZE;
-		}
+	// 	paddr_t pagePosition = lo;
+	// 	for (int i = 0; i < curFrames; i++) {
+	// 		coremap[i].isContiguous = false;
+	// 		coremap[i].isUsed = false;
+	// 		coremap[i].addr = pagePosition;
+	// 		pagePosition = pagePosition + PAGE_SIZE;
+	// 	}
 
-		//set up totalFrames
-		totalFrames = curFrames;
+	// 	//set up totalFrames
+	// 	totalFrames = curFrames;
 
-		isCoreSet = true;
-	#endif //OPT_A3
+	// 	isCoreSet = true;
+	// #endif //OPT_A3
 }
 
 static
@@ -109,63 +109,63 @@ getppages(unsigned long npages)
 
 	spinlock_acquire(&stealmem_lock);
 
-		#if OPT_A3
+		// #if OPT_A3
 
-			if (isCoreSet) {
-				int start;
-				bool isAvailable=false;
+		// 	if (isCoreSet) {
+		// 		int start;
+		// 		bool isAvailable=false;
 
-				for (int i = 0; i < totalFrames; i++) {
-					if (!coremap[i].isUsed) {
-						int count = 1;
+		// 		for (int i = 0; i < totalFrames; i++) {
+		// 			if (!coremap[i].isUsed) {
+		// 				int count = 1;
 
-						if (((int)npages) > 1) {
-							for (int j = i+1; j < i + (int)npages; j++) {
-								if (!coremap[j].isUsed) {
-									count++;
-									if (count == (int)npages) {
-										start = i;
-										isAvailable = true;
-										break;
-									}
-								} else {
-									i = i + count; //skip
-									break;
-								}
-							}
-						} else {
-							start = i;
-							isAvailable = true;
-							break;
-						}
-					}
-				}
+		// 				if (((int)npages) > 1) {
+		// 					for (int j = i+1; j < i + (int)npages; j++) {
+		// 						if (!coremap[j].isUsed) {
+		// 							count++;
+		// 							if (count == (int)npages) {
+		// 								start = i;
+		// 								isAvailable = true;
+		// 								break;
+		// 							}
+		// 						} else {
+		// 							i = i + count; //skip
+		// 							break;
+		// 						}
+		// 					}
+		// 				} else {
+		// 					start = i;
+		// 					isAvailable = true;
+		// 					break;
+		// 				}
+		// 			}
+		// 		}
 
-				if (isAvailable) {
-					addr = coremap[start].addr;
+		// 		if (isAvailable) {
+		// 			addr = coremap[start].addr;
 
-					for (int i = 0; i < (int)npages; i++) {
-						if (i != (int)npages-1) {
-							coremap[i+start].isContiguous = true;
-						} else {
-							coremap[i+start].isContiguous = false;
-						}
-						coremap[i+start].isUsed = true;
-					}
-				} else {
-					spinlock_release(&stealmem_lock);
-					return ENOMEM;
-				}
+		// 			for (int i = 0; i < (int)npages; i++) {
+		// 				if (i != (int)npages-1) {
+		// 					coremap[i+start].isContiguous = true;
+		// 				} else {
+		// 					coremap[i+start].isContiguous = false;
+		// 				}
+		// 				coremap[i+start].isUsed = true;
+		// 			}
+		// 		} else {
+		// 			spinlock_release(&stealmem_lock);
+		// 			return ENOMEM;
+		// 		}
 
-			} else {
-				addr = ram_stealmem(npages);
-			}
+		// 	} else {
+		// 		addr = ram_stealmem(npages);
+		// 	}
 
-		#else
+		// #else
 
-			addr = ram_stealmem(npages);
+		// 	addr = ram_stealmem(npages);
 		
-		#endif //OPT_A3
+		// #endif //OPT_A3
 
 	spinlock_release(&stealmem_lock);
 	return addr;
@@ -186,36 +186,36 @@ alloc_kpages(int npages)
 void 
 free_kpages(vaddr_t addr)
 {
-	#if OPT_A3
+	// #if OPT_A3
 
-		spinlock_acquire(&stealmem_lock);
+	// 	spinlock_acquire(&stealmem_lock);
 
-			if (isCoreSet) {
-				if (addr == 0) {
-					spinlock_release(&stealmem_lock);
-					return;
-				}
+	// 		if (isCoreSet) {
+	// 			if (addr == 0) {
+	// 				spinlock_release(&stealmem_lock);
+	// 				return;
+	// 			}
 
-				bool isFree = false;
+	// 			bool isFree = false;
 
-				for (int i = 0; i < totalFrames; i++) {
-					if (addr == coremap[i].addr) {
-						isFree = true;
-					}
-					if (isFree) {
-						coremap[i].isUsed = false;
-						if (!coremap[i].isContiguous) break;
-					}
-				}
-			}
+	// 			for (int i = 0; i < totalFrames; i++) {
+	// 				if (addr == coremap[i].addr) {
+	// 					isFree = true;
+	// 				}
+	// 				if (isFree) {
+	// 					coremap[i].isUsed = false;
+	// 					if (!coremap[i].isContiguous) break;
+	// 				}
+	// 			}
+	// 		}
 
-		spinlock_release(&stealmem_lock);
+	// 	spinlock_release(&stealmem_lock);
 
-	#else
+	// #else
 
 		(void)addr;
 
-	#endif //OPT_A3
+	// #endif //OPT_A3
 }
 
 void
@@ -329,13 +329,13 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		ehi = faultaddress;
 		elo = paddr | TLBLO_DIRTY | TLBLO_VALID;
 
-		#if OPT_A3
+		// #if OPT_A3
 
-			if (isValidTextAddress && as->as_isLoaded) {
-				elo = elo & ~TLBLO_DIRTY;
-			}
+		// 	if (isValidTextAddress && as->as_isLoaded) {
+		// 		elo = elo & ~TLBLO_DIRTY;
+		// 	}
 
-		#endif //OPT_A3
+		// #endif //OPT_A3
 
 		DEBUG(DB_VM, "dumbvm: 0x%x -> 0x%x\n", faultaddress, paddr);
 		tlb_write(ehi, elo, i);
@@ -343,26 +343,26 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 		return 0;
 	}
 
-	#if OPT_A3
+	// #if OPT_A3
 
-		ehi = faultaddress;
-		elo = paddr | TLBLO_DIRTY | TLBLO_VALID;
+	// 	ehi = faultaddress;
+	// 	elo = paddr | TLBLO_DIRTY | TLBLO_VALID;
 
-		if (isValidTextAddress && as->as_isLoaded) {
-			elo = elo & ~TLBLO_DIRTY;
-		}
+	// 	if (isValidTextAddress && as->as_isLoaded) {
+	// 		elo = elo & ~TLBLO_DIRTY;
+	// 	}
 
-		tlb_random(ehi, elo);
-		splx(spl);
-		return 0;
+	// 	tlb_random(ehi, elo);
+	// 	splx(spl);
+	// 	return 0;
 
-	#else	
+	// #else	
 
-	kprintf("dumbvm: Ran out of TLB entries - cannot handle page fault\n");
-	splx(spl);
-	return EFAULT;
+	// kprintf("dumbvm: Ran out of TLB entries - cannot handle page fault\n");
+	// splx(spl);
+	// return EFAULT;
 
-	#endif //OPT_A3
+	// #endif //OPT_A3
 }
 
 struct addrspace *
@@ -388,13 +388,13 @@ as_create(void)
 void
 as_destroy(struct addrspace *as)
 {
-	#if OPT_A3
+	// #if OPT_A3
 
-		free_kpages(as->as_pbase1);
-		free_kpages(as->as_pbase2);
-		free_kpages(as->as_stackpbase);
+	// 	free_kpages(as->as_pbase1);
+	// 	free_kpages(as->as_pbase2);
+	// 	free_kpages(as->as_stackpbase);
 
-	#endif
+	// #endif
 	kfree(as);
 }
 
@@ -443,34 +443,34 @@ as_define_region(struct addrspace *as, vaddr_t vaddr, size_t sz,
 
 	npages = sz / PAGE_SIZE;
 
-	#if OPT_A3
+	// #if OPT_A3
 
-		if (readable) {
-			as->as_read = 1;
-		} else {
-			as->as_read = 0;
-		}
+	// 	if (readable) {
+	// 		as->as_read = 1;
+	// 	} else {
+	// 		as->as_read = 0;
+	// 	}
 
-		if (writeable) {
-			as->as_write = 1;
-		} else {
-			as->as_write = 0;
-		}
+	// 	if (writeable) {
+	// 		as->as_write = 1;
+	// 	} else {
+	// 		as->as_write = 0;
+	// 	}
 
-		if (executable) {
-			as->as_exec = 1;
-		} else {
-			as->as_exec = 0;
-		}
+	// 	if (executable) {
+	// 		as->as_exec = 1;
+	// 	} else {
+	// 		as->as_exec = 0;
+	// 	}
 
-	#else
+	// #else
 
 		/* We don't use these - all pages are read-write */
 		(void)readable;
 		(void)writeable;
 		(void)executable;
 
-	#endif //OPT_A3
+	// #endif //OPT_A3
 
 	if (as->as_vbase1 == 0) {
 		as->as_vbase1 = vaddr;
@@ -530,15 +530,15 @@ as_prepare_load(struct addrspace *as)
 int
 as_complete_load(struct addrspace *as)
 {
-	#if OPT_A3
+	// #if OPT_A3
 
-		as->as_isLoaded = true;
+	// 	as->as_isLoaded = true;
 
-	#else
+	// #else
 
 		(void)as;
 
-	#endif //OPT_A3
+	// #endif //OPT_A3
 
 	return 0;
 }
