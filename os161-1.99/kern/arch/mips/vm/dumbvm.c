@@ -163,7 +163,7 @@ getppages(unsigned long npages)
 
 		// #else
 
-		// 	addr = ram_stealmem(npages);
+			addr = ram_stealmem(npages);
 		
 		// #endif //OPT_A3
 
@@ -358,9 +358,9 @@ vm_fault(int faulttype, vaddr_t faultaddress)
 
 	// #else	
 
-	// kprintf("dumbvm: Ran out of TLB entries - cannot handle page fault\n");
-	// splx(spl);
-	// return EFAULT;
+	kprintf("dumbvm: Ran out of TLB entries - cannot handle page fault\n");
+	splx(spl);
+	return EFAULT;
 
 	// #endif //OPT_A3
 }
