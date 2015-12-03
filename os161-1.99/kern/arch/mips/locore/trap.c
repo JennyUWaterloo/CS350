@@ -42,10 +42,13 @@
  #include "opt-A3.h"
  #include <proc.h>
  #include <addrspace.h>
+ #include <synch.h>
+#include <kern/wait.h>
 
 
 /* in exception.S */
 extern void asm_usermode(struct trapframe *tf);
+extern struct array *procStructArray;
 
 /* called only from assembler, so not declared in a header */
 void mips_trap(struct trapframe *tf);
@@ -84,31 +87,31 @@ kill_curthread(vaddr_t epc, unsigned code, vaddr_t vaddr)
 	    case EX_IBE:
 	    case EX_DBE:
 	    case EX_SYS:
-		/* should not be seen */
-		KASSERT(0);
-		sig = SIGABRT;
-		break;
+			/* should not be seen */
+			KASSERT(0);
+			sig = SIGABRT;
+			break;
 	    case EX_MOD:
 	    case EX_TLBL:
 	    case EX_TLBS:
-		sig = SIGSEGV;
-		break;
+			sig = SIGSEGV;
+			break;
 	    case EX_ADEL:
 	    case EX_ADES:
-		sig = SIGBUS;
-		break;
+			sig = SIGBUS;
+			break;
 	    case EX_BP:
-		sig = SIGTRAP;
-		break;
+			sig = SIGTRAP;
+			break;
 	    case EX_RI:
-		sig = SIGILL;
-		break;
+			sig = SIGILL;
+			break;
 	    case EX_CPU:
-		sig = SIGSEGV;
-		break;
+			sig = SIGSEGV;
+			break;
 	    case EX_OVF:
-		sig = SIGFPE;
-		break;
+			sig = SIGFPE;
+			break;
 	}
 
 	/*
@@ -116,39 +119,48 @@ kill_curthread(vaddr_t epc, unsigned code, vaddr_t vaddr)
 	 */
 
 	#if OPT_A3
-	 	(void)epc;
-	 	(void)vaddr;
+	 (void)epc;
+	 (void)vaddr;
+		  struct addrspace *as;
+		  struct proc *p = curproc;
+		  
 
-	 	//from sys_exit
-	 	struct addrspace *as;
-  		struct proc *p = curproc;
-  		as_deactivate();
-	  	/*
+		    int parentLocation = locatePid(p->p_pid);
+		    struct procStruct *parentProcStr = array_get(procStructArray, parentLocation);
+		    parentProcStr->exitcode = _MKWAIT_SIG(sig);
+		    cleanChildren(parentLocation);
+
+		    V(parentProcStr->proc_sem);
+
+		  KASSERT(curproc->p_addrspace != NULL);
+		  as_deactivate();
+		  /*
 		   * clear p_addrspace before calling as_destroy. Otherwise if
 		   * as_destroy sleeps (which is quite possible) when we
 		   * come back we'll be calling as_activate on a
 		   * half-destroyed address space. This tends to be
 		   * messily fatal.
 		   */
-	  	as = curproc_setas(NULL);
-	  	as_destroy(as);
+		  as = curproc_setas(NULL);
+		  as_destroy(as);
 
-	  	/* detach this thread from its process */
-	  	/* note: curproc cannot be used after this call */
-	  	proc_remthread(curthread);
+		  /* detach this thread from its process */
+		  /* note: curproc cannot be used after this call */
+		  proc_remthread(curthread);
 
-	  	/* if this is the last user process in the system, proc_destroy()
-	     will wake up the kernel menu thread */
-	  	proc_destroy(p);
-	  
-	  	thread_exit();
-	  	/* thread_exit() does not return, so we should never get here */
-	  	panic("return from thread_exit in kill_curthread\n");
-	#endif
+		  /* if this is the last user process in the system, proc_destroy()
+		     will wake up the kernel menu thread */
+		  proc_destroy(p);
+		  
+		  thread_exit();
+		  /* thread_exit() does not return, so we should never get here */
+		  panic("return from thread_exit in sys_exit\n");
+	#else
 
 		kprintf("Fatal user mode trap %u sig %d (%s, epc 0x%x, vaddr 0x%x)\n",
 			code, sig, trapcodenames[code], epc, vaddr);
 		panic("I don't know how to handle this\n");
+	#endif
 }
 
 /*
